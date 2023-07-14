@@ -1,0 +1,22 @@
+.emoji-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.emoji-card {
+  width: 200px;
+  margin: 10px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.emoji-details {
+  margin-top: 10px;
+}
+
+.emoji-details p {
+  margin: 5px;
+}
