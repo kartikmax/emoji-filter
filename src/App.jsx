@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
-import "./app.css";
+import "./App.css";
 
 const App = () => {
   const [emojis, setEmojis] = useState([]);
@@ -12,6 +12,8 @@ const App = () => {
   const [filteredEmojis, setFilteredEmojis] = useState([]);
   const [availableGroups, setAvailableGroups] = useState([]);
   const [availableCategories, setAvailableCategories] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [emojisPerPage] = useState(10);
 
   useEffect(() => {
     fetchData();
@@ -52,6 +54,7 @@ const App = () => {
     }
 
     setFilteredEmojis(filteredData);
+    setCurrentPage(1); // Reset current page when applying filter
   };
 
   const extractFilterOptions = () => {
@@ -63,11 +66,22 @@ const App = () => {
 
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
-    setFilter((prevFilter) => ({
-      ...prevFilter,
-      [name]: value,
-    }));
+    
+    if (name === "group") {
+      setFilter((prevFilter) => ({
+        ...prevFilter,
+        group: value,
+        category: "", 
+      }));
+    } else if (name === "category") {
+      setFilter((prevFilter) => ({
+        ...prevFilter,
+        group: "", 
+        category: value,
+      }));
+    }
   };
+  
 
   const handleFilterSubmit = (event) => {
     event.preventDefault();
@@ -76,8 +90,45 @@ const App = () => {
 
   const memoizedEmojis = useMemo(() => filteredEmojis, [filteredEmojis]);
 
+  const indexOfLastEmoji = currentPage * emojisPerPage;
+  const indexOfFirstEmoji = indexOfLastEmoji - emojisPerPage;
+  const currentEmojis = memoizedEmojis.slice(
+    indexOfFirstEmoji,
+    indexOfLastEmoji
+  );
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const totalPages = Math.ceil(memoizedEmojis.length / emojisPerPage);
+  const pageNumbers = [];
+
+  for (let i = 1; i <= totalPages; i++) {
+    pageNumbers.push(i);
+  }
+
+  const maxDisplayedPages = 10;
+  const middlePage = Math.ceil(maxDisplayedPages / 2);
+  let displayedPages = [];
+
+  if (totalPages <= maxDisplayedPages) {
+    displayedPages = pageNumbers;
+  } else {
+    if (currentPage <= middlePage) {
+      displayedPages = pageNumbers.slice(0, maxDisplayedPages);
+    } else if (currentPage > totalPages - middlePage) {
+      displayedPages = pageNumbers.slice(totalPages - maxDisplayedPages);
+    } else {
+      displayedPages = pageNumbers.slice(
+        currentPage - middlePage,
+        currentPage + middlePage - 1
+      );
+    }
+  }
+
   return (
-    <>
+    <div >
       <h1>Emoji Application</h1>
       <div className="navbar">
         <form onSubmit={handleFilterSubmit}>
@@ -114,14 +165,14 @@ const App = () => {
           <button type="submit">Filter</button>
         </form>
       </div>
-      <div>
+      <div >
         {isLoading ? (
           <p>Loading...</p>
-        ) : memoizedEmojis.length > 0 ? (
+        ) : currentEmojis.length > 0 ? (
           <>
-            <p>{`${memoizedEmojis.length} emojis filtered`}</p>
+            <p>{`${currentEmojis.length} emojis filtered`}</p>
             <div className="emoji-container">
-              {memoizedEmojis.map((emoji) => (
+              {currentEmojis.map((emoji) => (
                 <div className="emoji-card" key={emoji.name + emoji.category}>
                   <span
                     className="emoji"
@@ -142,7 +193,34 @@ const App = () => {
           <p>No emojis found.</p>
         )}
       </div>
-    </>
+      <div className="pagination">
+        {currentPage > 1 && (
+          <button
+            className="prev-btn"
+            onClick={() => handlePageChange(currentPage - 1)}
+          >
+            Prev
+          </button>
+        )}
+        {displayedPages.map((pageNumber) => (
+          <button
+            key={pageNumber}
+            className={pageNumber === currentPage ? "active" : ""}
+            onClick={() => handlePageChange(pageNumber)}
+          >
+            {pageNumber}
+          </button>
+        ))}
+        {currentPage < totalPages && (
+          <button
+            className="next-btn"
+            onClick={() => handlePageChange(currentPage + 1)}
+          >
+            Next
+          </button>
+        )}
+      </div>
+    </div>
   );
 };
 
